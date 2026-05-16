@@ -517,7 +517,7 @@ describe('connectCodex - Windows package selection', () => {
     expect(command).toContain('chcp 65001 >nul &&');
     expect(args).toContain('x');
     expect(args).toContain('--bun');
-    expect(args).toContain('@zed-industries/codex-acp-win32-x64@0.9.5');
+    expect(args).toContain('@zed-industries/codex-acp-win32-x64@0.14.0');
   });
 
   it('uses the direct Windows platform package first when startup succeeds', async () => {
@@ -529,8 +529,8 @@ describe('connectCodex - Windows package selection', () => {
     await connectCodex('C:\\cwd', hooks);
 
     const [, args] = mockSpawn.mock.calls[0];
-    expect(args).toContain('@zed-industries/codex-acp-win32-x64@0.9.5');
-    expect(args).not.toContain('@zed-industries/codex-acp@0.9.5');
+    expect(args).toContain('@zed-industries/codex-acp-win32-x64@0.14.0');
+    expect(args).not.toContain('@zed-industries/codex-acp@0.14.0');
     expect(mockChild.unref).not.toHaveBeenCalled();
   });
 
@@ -538,7 +538,7 @@ describe('connectCodex - Windows package selection', () => {
     const hooks = {
       setup: vi.fn(async () => {
         const [, args] = mockSpawn.mock.calls.at(-1) ?? [];
-        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp-win32-x64@0.9.5')) {
+        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp-win32-x64@0.14.0')) {
           throw new Error('Request initialize timed out after 60 seconds');
         }
       }),
@@ -550,8 +550,8 @@ describe('connectCodex - Windows package selection', () => {
     const firstCallArgs = mockSpawn.mock.calls[0]?.[1];
     const secondCallArgs = mockSpawn.mock.calls[1]?.[1];
 
-    expect(firstCallArgs).toContain('@zed-industries/codex-acp-win32-x64@0.9.5');
-    expect(secondCallArgs).toContain('@zed-industries/codex-acp@0.9.5');
+    expect(firstCallArgs).toContain('@zed-industries/codex-acp-win32-x64@0.14.0');
+    expect(secondCallArgs).toContain('@zed-industries/codex-acp@0.14.0');
   });
 });
 
@@ -593,7 +593,7 @@ describe('connectCodex - Linux package selection', () => {
     expect(command).toBe('/bundled/bun');
     expect(args).toContain('x');
     expect(args).toContain('--bun');
-    expect(args).toContain('@zed-industries/codex-acp-linux-x64@0.9.5');
+    expect(args).toContain('@zed-industries/codex-acp-linux-x64@0.14.0');
   });
 
   it('uses the direct Linux platform package first when startup succeeds', async () => {
@@ -605,8 +605,8 @@ describe('connectCodex - Linux package selection', () => {
     await connectCodex('/cwd', hooks);
 
     const [, args] = mockSpawn.mock.calls[0];
-    expect(args).toContain('@zed-industries/codex-acp-linux-x64@0.9.5');
-    expect(args).not.toContain('@zed-industries/codex-acp@0.9.5');
+    expect(args).toContain('@zed-industries/codex-acp-linux-x64@0.14.0');
+    expect(args).not.toContain('@zed-industries/codex-acp@0.14.0');
     expect(mockChild.unref).not.toHaveBeenCalled();
   });
 
@@ -614,7 +614,7 @@ describe('connectCodex - Linux package selection', () => {
     const hooks = {
       setup: vi.fn(async () => {
         const [, args] = mockSpawn.mock.calls.at(-1) ?? [];
-        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp-linux-x64@0.9.5')) {
+        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp-linux-x64@0.14.0')) {
           throw new Error('Request initialize timed out after 60 seconds');
         }
       }),
@@ -626,8 +626,8 @@ describe('connectCodex - Linux package selection', () => {
     const firstCallArgs = mockSpawn.mock.calls[0]?.[1];
     const secondCallArgs = mockSpawn.mock.calls[1]?.[1];
 
-    expect(firstCallArgs).toContain('@zed-industries/codex-acp-linux-x64@0.9.5');
-    expect(secondCallArgs).toContain('@zed-industries/codex-acp@0.9.5');
+    expect(firstCallArgs).toContain('@zed-industries/codex-acp-linux-x64@0.14.0');
+    expect(secondCallArgs).toContain('@zed-industries/codex-acp@0.14.0');
   });
 });
 
@@ -660,7 +660,7 @@ describe('connectCodex - Darwin optional dependency fallback', () => {
     const hooks = {
       setup: vi.fn(async () => {
         const [, args] = mockSpawn.mock.calls.at(-1) ?? [];
-        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp@0.9.5')) {
+        if (Array.isArray(args) && args.includes('@zed-industries/codex-acp@0.14.0')) {
           throw new Error(
             "Error resolving package: Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@zed-industries/codex-acp-darwin-x64' imported from /tmp/codex-acp.js\n" +
               'Failed to locate @zed-industries/codex-acp-darwin-x64 binary. This usually means the optional dependency was not installed.'
@@ -675,7 +675,7 @@ describe('connectCodex - Darwin optional dependency fallback', () => {
     const firstCallArgs = mockSpawn.mock.calls[0]?.[1];
     const secondCallArgs = mockSpawn.mock.calls[1]?.[1];
 
-    expect(firstCallArgs).toContain('@zed-industries/codex-acp@0.9.5');
-    expect(secondCallArgs).toContain('@zed-industries/codex-acp-darwin-x64@0.9.5');
+    expect(firstCallArgs).toContain('@zed-industries/codex-acp@0.14.0');
+    expect(secondCallArgs).toContain('@zed-industries/codex-acp-darwin-x64@0.14.0');
   });
 });

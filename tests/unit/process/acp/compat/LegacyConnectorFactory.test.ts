@@ -92,7 +92,7 @@ describe('LegacyConnectorFactory', () => {
       // Invoke the spawnFn to verify it calls connectCodex
       const { spawnFn } = mockProcessAcpClientInstances[0];
       const result = await spawnFn();
-      expect(mocks.connectCodex).toHaveBeenCalledWith('/tmp/test', expect.any(Object));
+      expect(mocks.connectCodex).toHaveBeenCalledWith('/tmp/test', expect.any(Object), undefined);
       expect(result).toBe(child);
     });
 
@@ -107,7 +107,7 @@ describe('LegacyConnectorFactory', () => {
 
       const { spawnFn } = mockProcessAcpClientInstances[0];
       await spawnFn();
-      expect(mocks.connectClaude).toHaveBeenCalledWith('/tmp/test', expect.any(Object));
+      expect(mocks.connectClaude).toHaveBeenCalledWith('/tmp/test', expect.any(Object), undefined);
     });
 
     it('uses connectCodebuddy for codebuddy backend', async () => {
@@ -123,7 +123,7 @@ describe('LegacyConnectorFactory', () => {
 
       const { spawnFn } = mockProcessAcpClientInstances[0];
       await spawnFn();
-      expect(mocks.connectCodebuddy).toHaveBeenCalledWith('/tmp/test', expect.any(Object));
+      expect(mocks.connectCodebuddy).toHaveBeenCalledWith('/tmp/test', expect.any(Object), undefined);
     });
 
     it('rejects when connect function fails', async () => {
