@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const CODEX_ACP_BRIDGE_VERSION = '0.9.5';
+export const CODEX_ACP_BRIDGE_VERSION = '0.14.0';
 export const CODEX_ACP_NPX_PACKAGE = `@zed-industries/codex-acp@${CODEX_ACP_BRIDGE_VERSION}`;
 
 export const CLAUDE_ACP_BRIDGE_VERSION = '0.29.2';

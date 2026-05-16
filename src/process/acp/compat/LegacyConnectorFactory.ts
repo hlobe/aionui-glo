@@ -29,7 +29,7 @@ import {
 import { AcpError } from '@process/acp/errors/AcpError';
 import type { ChildProcess } from 'node:child_process';
 
-type BuiltinConnectFn = (cwd: string, hooks: NpxConnectHooks) => Promise<void>;
+type BuiltinConnectFn = (cwd: string, hooks: NpxConnectHooks, env?: Record<string, string>) => Promise<void>;
 
 const NPX_BACKENDS: Record<string, BuiltinConnectFn> = {
   codex: connectCodex,
@@ -55,7 +55,7 @@ async function spawnLegacyChild(config: AgentConfig): Promise<ChildProcess> {
 
   const npxConnect = NPX_BACKENDS[backend];
   if (npxConnect) {
-    return spawnViaNpxHooks(npxConnect, cwd);
+    return spawnViaNpxHooks(npxConnect, cwd, config.env);
   }
   if (config.command) {
     const result = await spawnGenericBackend(backend, config.command, cwd, config.args, config.env);
@@ -64,7 +64,7 @@ async function spawnLegacyChild(config: AgentConfig): Promise<ChildProcess> {
   throw new AcpError('CONNECTION_FAILED', `No CLI path for backend "${backend}"`, { retryable: false });
 }
 
-function spawnViaNpxHooks(connectFn: BuiltinConnectFn, cwd: string): Promise<ChildProcess> {
+function spawnViaNpxHooks(connectFn: BuiltinConnectFn, cwd: string, env?: Record<string, string>): Promise<ChildProcess> {
   return new Promise<ChildProcess>((resolve, reject) => {
     let resolved = false;
     let lastChild: ChildProcess | null = null;
@@ -89,7 +89,7 @@ function spawnViaNpxHooks(connectFn: BuiltinConnectFn, cwd: string): Promise<Chi
       },
     };
 
-    connectFn(cwd, hooks).catch((err) => {
+    connectFn(cwd, hooks, env).catch((err) => {
       if (!resolved) {
         reject(
           new AcpError('CONNECTION_FAILED', `Failed to connect: ${(err as Error).message}`, {

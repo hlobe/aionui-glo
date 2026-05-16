@@ -389,7 +389,9 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
       if (!acpAgentInfo && !isPreset) {
         console.warn(`${acpBackend} CLI not found, but proceeding to let conversation panel handle it.`);
       }
-      const agentBackend = acpBackend || selectedAgent;
+      // For profile backends (e.g. codex/claude profile), acpAgentInfo.backend holds the real
+      // backend ('codex', 'claude'), while selectedAgent is always 'custom' for custom: keys.
+      const agentBackend = acpAgentInfo?.backend || acpBackend || selectedAgent;
       const agentConversationParams = buildAgentConversationParams({
         backend: agentBackend,
         name: input,
