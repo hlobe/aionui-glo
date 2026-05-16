@@ -240,9 +240,10 @@ class AcpDetector {
           name: a.name || 'Custom Agent',
           kind: 'acp' as const,
           available: true,
-          backend: 'custom',
+          backend: a.profileBackend || 'custom',
           cliPath: a.defaultCliPath,
           acpArgs: a.acpArgs,
+          profileBackend: a.profileBackend,
           customAgentId: a.id,
         }));
     } catch (error) {

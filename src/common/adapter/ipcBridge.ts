@@ -464,6 +464,7 @@ export const acpConversation = {
         extensionName?: string;
         isPreset?: boolean;
         customAgentId?: string;
+        profileBackend?: string;
       }>
     >,
     void

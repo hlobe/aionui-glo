@@ -164,6 +164,18 @@ export interface AcpBackendConfig {
    */
   defaultCliPath?: string;
 
+  /**
+   * Optional base backend for a user-defined CLI profile.
+   *
+   * When set to `claude` or `codex`, AionUi keeps this config as an individually
+   * selectable custom profile, but launches it through the native backend
+   * connector so provider-specific ACP bridges and model controls still work.
+   * This lets users run multiple local accounts side by side by assigning
+   * profile-specific environment variables such as CLAUDE_CONFIG_DIR or
+   * CODEX_HOME.
+   */
+  profileBackend?: AcpBackendAll;
+
   /** 使用前是否需要认证 / Whether this backend requires authentication before use */
   authRequired?: boolean;
 

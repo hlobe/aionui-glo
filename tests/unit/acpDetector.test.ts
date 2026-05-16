@@ -32,6 +32,8 @@ function makeAcpAgent(opts: {
   acpArgs?: string[];
   isExtension?: boolean;
   extensionName?: string;
+  customAgentId?: string;
+  profileBackend?: string;
 }): AcpDetectedAgent {
   return {
     id: opts.id,
@@ -43,6 +45,8 @@ function makeAcpAgent(opts: {
     acpArgs: opts.acpArgs ?? ['--acp'],
     isExtension: opts.isExtension,
     extensionName: opts.extensionName,
+    customAgentId: opts.customAgentId,
+    profileBackend: opts.profileBackend,
   };
 }
 
@@ -183,6 +187,29 @@ describe('AgentRegistry', () => {
       expect(qwenAgents).toHaveLength(1);
       expect(qwenAgents[0].cliPath).toBe('qwen'); // builtin wins
       expect(qwenAgents[0].isExtension).toBeUndefined();
+    });
+
+    it('should keep custom profiles even when they use the same backend as a builtin', async () => {
+      mockDetectBuiltinAgents.mockResolvedValue([
+        makeAcpAgent({ id: 'claude', name: 'Claude Code', backend: 'claude', cliPath: 'claude' }),
+      ]);
+      mockDetectCustomAgents.mockResolvedValue([
+        makeAcpAgent({
+          id: 'custom:claude-second',
+          name: 'Claude Second',
+          backend: 'claude',
+          cliPath: 'claude',
+          customAgentId: 'claude-second',
+          profileBackend: 'claude',
+        }),
+      ]);
+
+      const registry = await createFreshRegistry();
+      await registry.initialize();
+      const agents = registry.getDetectedAgents();
+
+      expect(agents.filter((a) => a.kind === 'acp' && a.backend === 'claude')).toHaveLength(2);
+      expect(agents.find((a) => a.kind === 'acp' && a.customAgentId === 'claude-second')).toBeDefined();
     });
 
     it('should keep extension agent when no builtin has the same backend', async () => {

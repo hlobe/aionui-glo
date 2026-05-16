@@ -83,7 +83,10 @@ type BufferedStreamTextMessage = {
   timer: ReturnType<typeof setTimeout>;
 };
 
-type CustomAgentLaunchConfig = Pick<AcpBackendConfig, 'id' | 'name' | 'defaultCliPath' | 'acpArgs' | 'env'>;
+type CustomAgentLaunchConfig = Pick<
+  AcpBackendConfig,
+  'id' | 'name' | 'defaultCliPath' | 'acpArgs' | 'env' | 'profileBackend'
+>;
 
 class AcpAgentManager extends BaseAgentManager<AcpAgentManagerData, AcpPermissionOption> {
   workspace: string;
@@ -462,7 +465,20 @@ ${collectedResponses.join('\n')}`;
     yoloMode?: boolean;
   }> {
     if (data.customAgentId) {
-      return this.resolveCustomAgentCliConfig(data);
+      const customConfig = await this.resolveCustomAgentCliConfig(data);
+      if (data.backend !== 'custom') {
+        const builtinConfig = await this.resolveBuiltinBackendConfig({
+          ...data,
+          cliPath: customConfig.cliPath || data.cliPath,
+        });
+        return {
+          cliPath: customConfig.cliPath || builtinConfig.cliPath,
+          customArgs: customConfig.customArgs || builtinConfig.customArgs,
+          customEnv: customConfig.customEnv,
+          yoloMode: builtinConfig.yoloMode,
+        };
+      }
+      return customConfig;
     }
     return this.resolveBuiltinBackendConfig(data);
   }
@@ -476,7 +492,9 @@ ${collectedResponses.join('\n')}`;
     customArgs?: string[];
     customEnv?: Record<string, string>;
   }> {
-    const customAgents = await ProcessConfig.get('assistants');
+    const configuredCustomAgents = await ProcessConfig.get('acp.customAgents');
+    const legacyAssistants = await ProcessConfig.get('assistants');
+    const customAgents = [...(configuredCustomAgents || []), ...(legacyAssistants || [])];
     let customAgentConfig: CustomAgentLaunchConfig | undefined = customAgents?.find(
       (agent) => agent.id === data.customAgentId
     );
@@ -501,6 +519,7 @@ ${collectedResponses.join('\n')}`;
             ? adapter.acpArgs.filter((v): v is string => typeof v === 'string')
             : undefined,
           env: typeof adapter.env === 'object' && adapter.env ? (adapter.env as Record<string, string>) : undefined,
+          profileBackend: typeof adapter.profileBackend === 'string' ? (adapter.profileBackend as AcpBackend) : undefined,
         };
       }
     }

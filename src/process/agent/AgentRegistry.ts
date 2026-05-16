@@ -129,15 +129,19 @@ class AgentRegistry {
    * determines priority: Aionrs > Gemini > Builtin > Other > Remote > Extension > Custom.
    * When an extension contributes the same backend as a builtin, the builtin wins.
    *
-   * Remote and custom agents share their `backend` string but are individually
-   * addressable via their unique `id`, so they skip backend dedup.
+   * Remote and user-defined custom/profile agents are individually addressable
+   * via their unique `id`, so they skip backend dedup even when a profile uses
+   * a built-in backend such as claude or codex.
    */
   private deduplicate(agents: DetectedAgent[]): DetectedAgent[] {
     const seen = new Set<string>();
     const result: DetectedAgent[] = [];
 
     for (const agent of agents) {
-      const key = agent.kind === 'remote' || agent.backend === 'custom' ? agent.id : agent.backend;
+      const key =
+        agent.kind === 'remote' || agent.backend === 'custom' || ('customAgentId' in agent && agent.customAgentId)
+          ? agent.id
+          : agent.backend;
       if (seen.has(key)) continue;
       seen.add(key);
       result.push(agent);

@@ -41,6 +41,8 @@ type KindFields = {
     extensionName?: string;
     /** Extension-contributed custom agent ID (e.g. 'ext:name:adapterId') */
     customAgentId?: string;
+    /** User-defined profile base backend (e.g. claude or codex). */
+    profileBackend?: string;
   };
 
   remote: {

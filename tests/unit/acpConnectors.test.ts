@@ -297,6 +297,32 @@ describe('connectCodex - Windows diagnostics', () => {
     expect(setup).toHaveBeenCalledTimes(1);
     expect(cleanup).not.toHaveBeenCalled();
   });
+
+  it('uses profile env for Codex diagnostics and bridge process', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+
+    const setup = vi.fn().mockResolvedValue(undefined);
+    const cleanup = vi.fn().mockResolvedValue(undefined);
+
+    await connectCodex('/cwd', { setup, cleanup }, { CODEX_HOME: '/tmp/codex-second' });
+
+    expect(mockExecFile).toHaveBeenNthCalledWith(
+      1,
+      'codex',
+      ['--version'],
+      expect.objectContaining({
+        env: expect.objectContaining({ CODEX_HOME: '/tmp/codex-second' }),
+      }),
+      expect.any(Function)
+    );
+    expect(mockSpawn).toHaveBeenCalledWith(
+      '/bundled/bun',
+      expect.arrayContaining(['x', '--bun']),
+      expect.objectContaining({
+        env: expect.objectContaining({ CODEX_HOME: '/tmp/codex-second' }),
+      })
+    );
+  });
 });
 
 describe('connectClaude - detached process group', () => {
@@ -355,6 +381,25 @@ describe('connectClaude - detached process group', () => {
           PATH: '/usr/bin',
           ANTHROPIC_BASE_URL: 'http://localhost:4000',
           ANTHROPIC_AUTH_TOKEN: 'sk-test-token',
+        }),
+      })
+    );
+  });
+
+  it('injects profile env into Claude ACP bridge process env', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+
+    const setup = vi.fn().mockResolvedValue(undefined);
+    const cleanup = vi.fn().mockResolvedValue(undefined);
+
+    await connectClaude('/cwd', { setup, cleanup }, { CLAUDE_CONFIG_DIR: '/tmp/claude-second' });
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      '/bundled/bun',
+      expect.arrayContaining(['x', '--bun', '@agentclientprotocol/claude-agent-acp@0.29.2']),
+      expect.objectContaining({
+        env: expect.objectContaining({
+          CLAUDE_CONFIG_DIR: '/tmp/claude-second',
         }),
       })
     );

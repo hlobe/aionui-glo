@@ -176,6 +176,31 @@ describe('InlineAgentEditor', () => {
     expect(saved.enabled).toBe(true);
   });
 
+  it('saves Claude profile backend for account-specific CLI profiles', async () => {
+    const onSave = vi.fn();
+    const agent = makeAgent({
+      name: 'Claude Second',
+      defaultCliPath: 'claude',
+      profileBackend: 'claude',
+      env: { CLAUDE_CONFIG_DIR: '/tmp/claude-second' },
+    });
+
+    await act(async () => {
+      render(<InlineAgentEditor agent={agent} onSave={onSave} onCancel={vi.fn()} />);
+    });
+
+    const buttons = screen.getAllByRole('button');
+    const saveButton = buttons.find((btn) => btn.textContent?.includes('common.save'));
+
+    await act(async () => {
+      fireEvent.click(saveButton!);
+    });
+
+    const saved = onSave.mock.calls[0][0] as AcpBackendConfig;
+    expect(saved.profileBackend).toBe('claude');
+    expect(saved.defaultCliPath).toBe('claude');
+  });
+
   it('shows success alert after successful test connection', async () => {
     mockTestCustomAgent.mockResolvedValue({ success: true });
     const agent = makeAgent();

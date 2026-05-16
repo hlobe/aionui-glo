@@ -6,7 +6,7 @@
 
 import type { AcpBackendConfig } from '@/common/types/acpTypes';
 import { acpConversation } from '@/common/adapter/ipcBridge';
-import { Alert, Avatar, Button, Collapse, Input, Typography } from '@arco-design/web-react';
+import { Alert, Avatar, Button, Collapse, Input, Select, Typography } from '@arco-design/web-react';
 import { Plus, Delete, CheckOne, CloseOne } from '@icon-park/react';
 import EmojiPicker from '@/renderer/components/chat/EmojiPicker';
 import CodeMirror from '@uiw/react-codemirror';
@@ -17,6 +17,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'fail_cli' | 'fail_acp';
+type ProfileBackend = 'custom' | 'claude' | 'codex';
 
 export interface EnvVar {
   id: string;
@@ -78,6 +79,7 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
 
   const [avatar, setAvatar] = useState('🤖');
   const [name, setName] = useState('');
+  const [profileBackend, setProfileBackend] = useState<ProfileBackend>('custom');
   const [command, setCommand] = useState('');
   const [argsString, setArgsString] = useState('');
   const [envVars, setEnvVars] = useState<EnvVar[]>([]);
@@ -88,8 +90,15 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
 
   const buildJsonFromForm = useCallback(
-    (opts?: { nameVal?: string; cmdVal?: string; argsVal?: string; envVal?: EnvVar[] }) => {
+    (opts?: {
+      nameVal?: string;
+      profileBackendVal?: ProfileBackend;
+      cmdVal?: string;
+      argsVal?: string;
+      envVal?: EnvVar[];
+    }) => {
       const nameVal = opts?.nameVal ?? name;
+      const profileBackendVal = opts?.profileBackendVal ?? profileBackend;
       const cmdVal = opts?.cmdVal ?? command;
       const argsVal = opts?.argsVal ?? argsString;
       const envVal = opts?.envVal ?? envVars;
@@ -100,9 +109,12 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
         acpArgs: parseArgsString(argsVal),
         env: envVarsToObject(envVal),
       };
+      if (profileBackendVal !== 'custom') {
+        config.profileBackend = profileBackendVal;
+      }
       return JSON.stringify(config, null, 2);
     },
-    [name, command, argsString, envVars]
+    [name, profileBackend, command, argsString, envVars]
   );
 
   useEffect(() => {
@@ -118,12 +130,16 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
     if (agent) {
       setAvatar(agent.avatar || '🤖');
       setName(agent.name || '');
+      setProfileBackend(
+        agent.profileBackend === 'claude' || agent.profileBackend === 'codex' ? agent.profileBackend : 'custom'
+      );
       setCommand(agent.defaultCliPath || '');
       setArgsString(agent.acpArgs?.join(' ') || '');
       setEnvVars(objectToEnvVars(agent.env));
     } else {
       setAvatar('🤖');
       setName('');
+      setProfileBackend('custom');
       setCommand('');
       setArgsString('');
       setEnvVars([]);
@@ -141,6 +157,11 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
       const parsed = JSON.parse(value);
       setJsonError('');
       if (typeof parsed.name === 'string') setName(parsed.name);
+      if (parsed.profileBackend === 'claude' || parsed.profileBackend === 'codex') {
+        setProfileBackend(parsed.profileBackend);
+      } else {
+        setProfileBackend('custom');
+      }
       if (typeof parsed.defaultCliPath === 'string') setCommand(parsed.defaultCliPath);
       if (Array.isArray(parsed.acpArgs)) setArgsString(parsed.acpArgs.join(' '));
       if (parsed.env && typeof parsed.env === 'object') {
@@ -158,6 +179,15 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
   const handleNameChange = useCallback((v: string) => {
     isJsonEditingRef.current = false;
     setName(v);
+  }, []);
+  const handleProfileBackendChange = useCallback((v: ProfileBackend) => {
+    isJsonEditingRef.current = false;
+    setProfileBackend(v);
+    if (v === 'claude') {
+      setCommand((current) => current || 'claude');
+    } else if (v === 'codex') {
+      setCommand((current) => current || 'codex');
+    }
   }, []);
   const handleCommandChange = useCallback((v: string) => {
     isJsonEditingRef.current = false;
@@ -214,9 +244,10 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
       enabled: agent?.enabled !== false,
       acpArgs: parsedArgs.length > 0 ? parsedArgs : undefined,
       env: Object.keys(envObj).length > 0 ? envObj : undefined,
+      profileBackend: profileBackend === 'custom' ? undefined : profileBackend,
     };
     onSave(customAgent);
-  }, [agent, name, avatar, command, argsString, envVars, onSave]);
+  }, [agent, name, avatar, profileBackend, command, argsString, envVars, onSave]);
 
   const isSubmitDisabled = !name.trim() || !command.trim();
   const isTestDisabled = !command.trim() || testStatus === 'testing';
@@ -247,6 +278,24 @@ const InlineAgentEditor: React.FC<InlineAgentEditorProps> = ({ agent, onSave, on
             placeholder={t('settings.agentNamePlaceholder')}
           />
         </div>
+      </div>
+
+      {/* Profile Backend */}
+      <div>
+        <Typography.Text className={fieldLabelClassName}>{t('settings.profileBackendLabel')}</Typography.Text>
+        <Select
+          size='large'
+          value={profileBackend}
+          onChange={handleProfileBackendChange}
+          options={[
+            { label: t('settings.profileBackendCustom'), value: 'custom' },
+            { label: t('settings.profileBackendClaude'), value: 'claude' },
+            { label: t('settings.profileBackendCodex'), value: 'codex' },
+          ]}
+        />
+        <Typography.Text type='secondary' className={fieldHelpClassName}>
+          {t('settings.profileBackendHelp')}
+        </Typography.Text>
       </div>
 
       {/* Command */}

@@ -436,9 +436,23 @@ async function prepareClaude(): Promise<NpxPrepareResult> {
   return { cleanEnv, npxCommand: resolveNpxPath(cleanEnv) };
 }
 
+async function prepareClaudeProfile(customEnv?: Record<string, string>): Promise<NpxPrepareResult> {
+  const result = await prepareClaude();
+  if (customEnv) {
+    Object.assign(result.cleanEnv, customEnv);
+  }
+  return result;
+}
+
 /** Prepare clean env + resolve npx + run diagnostics for Codex ACP bridge. */
-async function prepareCodex(codexAcpPackage: string = CODEX_ACP_NPX_PACKAGE): Promise<NpxPrepareResult> {
+async function prepareCodex(
+  codexAcpPackage: string = CODEX_ACP_NPX_PACKAGE,
+  customEnv?: Record<string, string>
+): Promise<NpxPrepareResult> {
   const cleanEnv = await prepareCleanEnv();
+  if (customEnv) {
+    Object.assign(cleanEnv, customEnv);
+  }
 
   const diagStart = Date.now();
   const codexCommand = process.platform === 'win32' ? 'codex.cmd' : 'codex';
@@ -571,12 +585,16 @@ async function connectNpxBackend(config: {
   /** Terminate a failed Phase-1 child before retrying. */
   cleanup: () => Promise<void>;
   extraArgs?: string[];
+  customEnv?: Record<string, string>;
   detached?: boolean;
 }): Promise<void> {
   const { backend, npxPackage, prepareFn, workingDir, setup, cleanup } = config;
 
   const envStart = Date.now();
   const { cleanEnv, npxCommand, extraArgs: prepExtraArgs = [] } = await prepareFn();
+  if (config.customEnv) {
+    Object.assign(cleanEnv, config.customEnv);
+  }
   console.log(`[ACP-PERF] ${backend}: env prepared ${Date.now() - envStart}ms`);
 
   const isWindows = process.platform === 'win32';
@@ -635,19 +653,28 @@ async function connectNpxBackend(config: {
 // ── Exported per-backend connect functions ───────────────────────────
 
 /** Connect to Claude ACP bridge via npx. */
-export function connectClaude(workingDir: string, hooks: NpxConnectHooks): Promise<void> {
+export function connectClaude(
+  workingDir: string,
+  hooks: NpxConnectHooks,
+  customEnv?: Record<string, string>
+): Promise<void> {
   return connectNpxBackend({
     backend: 'claude',
     npxPackage: CLAUDE_ACP_NPX_PACKAGE,
-    prepareFn: prepareClaude,
+    prepareFn: () => prepareClaudeProfile(customEnv),
     workingDir,
     ...hooks,
+    customEnv,
     detached: process.platform !== 'win32',
   });
 }
 
 /** Connect to Codex ACP bridge via npx. */
-export function connectCodex(workingDir: string, hooks: NpxConnectHooks): Promise<void> {
+export function connectCodex(
+  workingDir: string,
+  hooks: NpxConnectHooks,
+  customEnv?: Record<string, string>
+): Promise<void> {
   return (async () => {
     const codexPlatformPackage = resolvePreferredCodexAcpPlatformPackage();
     const preferDirectPackage = codexPlatformPackage !== null && shouldPreferDirectCodexAcpPackage();
@@ -662,9 +689,10 @@ export function connectCodex(workingDir: string, hooks: NpxConnectHooks): Promis
         await connectNpxBackend({
           backend: 'codex',
           npxPackage,
-          prepareFn: () => prepareCodex(npxPackage),
+          prepareFn: () => prepareCodex(npxPackage, customEnv),
           workingDir,
           ...hooks,
+          customEnv,
         });
         return;
       } catch (error) {

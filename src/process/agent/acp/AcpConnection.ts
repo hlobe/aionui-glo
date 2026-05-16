@@ -221,7 +221,7 @@ export class AcpConnection {
 
     switch (backend) {
       case 'claude':
-        await connectClaude(workingDir, npxHooks);
+        await connectClaude(workingDir, npxHooks, customEnv);
         break;
 
       case 'codebuddy':
@@ -229,7 +229,7 @@ export class AcpConnection {
         break;
 
       case 'codex':
-        await connectCodex(workingDir, npxHooks);
+        await connectCodex(workingDir, npxHooks, customEnv);
         break;
 
       case 'qwen':
